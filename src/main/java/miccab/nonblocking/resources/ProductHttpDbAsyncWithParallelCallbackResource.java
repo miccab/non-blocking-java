@@ -2,6 +2,8 @@ package miccab.nonblocking.resources;
 
 import miccab.nonblocking.model.Product;
 import miccab.nonblocking.dao.ProductDaoAsyncCallback;
+import miccab.nonblocking.model.ProductGroup;
+import miccab.nonblocking.model.ProductWithGroups;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -12,6 +14,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Created by michal on 02.08.15.
@@ -26,30 +29,45 @@ public class ProductHttpDbAsyncWithParallelCallbackResource {
     }
 
     @GET
-    public void findById(@QueryParam("id1") int id1, @QueryParam("id2") int id2, @Suspended AsyncResponse asyncResponse) {
+    public void findById(@QueryParam("id") int id, @Suspended AsyncResponse asyncResponse) {
         asyncResponse.setTimeout(10, TimeUnit.SECONDS);
         // NOTICE: DAO now uses single threaded model. So we should not need any sync
         //         however, this is implementation detail which might change.
         //         so to be safe we use synchronization to protect from race conditions
-        final List<Product> productsFound = Collections.synchronizedList(new ArrayList<>());
-        productDao.findNameById(id1,
+        final AtomicReference<List<ProductGroup>> productGroups = new AtomicReference<>();
+        final AtomicReference<Product> product = new AtomicReference<>();
+        productDao.findNameById(id,
                 productFound -> {
-                    consumeProduct(asyncResponse, productsFound, productFound);
+                    consumeProduct(asyncResponse, productFound, product, productGroups);
                 },
                 asyncResponse::resume);
-        productDao.findNameById(id2,
-                productFound -> {
-                    consumeProduct(asyncResponse, productsFound, productFound);
+        productDao.findProductGroupsById(id,
+                productGroupsFound -> {
+                    consumeProductGroups(asyncResponse, productGroupsFound, product, productGroups);
                 },
                 asyncResponse::resume);
     }
 
-    private void consumeProduct(AsyncResponse asyncResponse, List<Product> productsFound, Product productFound) {
-        productsFound.add(productFound);
-        // this is needed if we do not want to assume that DAO is single threaded
-        synchronized (productsFound) {
-            if (productsFound.size() == 2 && ! asyncResponse.isDone()) {
-                asyncResponse.resume(productsFound);
+    private void consumeProduct(AsyncResponse asyncResponse, Product productFound, AtomicReference<Product> product, AtomicReference<List<ProductGroup>> productGroups) {
+        product.set(productFound);
+        if (productGroups.get() != null) {
+            // this is needed if we do not want to assume that DAO is single threaded
+            synchronized (this) {
+                if (! asyncResponse.isDone()) {
+                    asyncResponse.resume(ProductWithGroups.createProductWithGroups(productFound, productGroups.get()));
+                }
+            }
+        }
+    }
+
+    private void consumeProductGroups(AsyncResponse asyncResponse, List<ProductGroup> productGroupsFound, AtomicReference<Product> product, AtomicReference<List<ProductGroup>> productGroups) {
+        productGroups.set(productGroupsFound);
+        if (product.get() != null) {
+            // this is needed if we do not want to assume that DAO is single threaded
+            synchronized (this) {
+                if (! asyncResponse.isDone()) {
+                    asyncResponse.resume(ProductWithGroups.createProductWithGroups(product.get(), productGroupsFound));
+                }
             }
         }
     }

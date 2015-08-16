@@ -4,9 +4,12 @@ import com.github.pgasync.Db;
 import com.github.pgasync.ResultSet;
 import com.github.pgasync.Row;
 import miccab.nonblocking.model.Product;
+import miccab.nonblocking.model.ProductGroup;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static miccab.nonblocking.model.Product.createProduct;
@@ -16,6 +19,7 @@ import static miccab.nonblocking.model.Product.createProduct;
  */
 public class ProductDaoAsyncCallback {
     private final static String SQL_FIND_BY_ID = ProductDao.SQL_FIND_BY_ID.replace(":id", "$1");
+    private final static String SQL_FIND_PRODUCT_GROUPS_BY_PRODUCT_ID = ProductDao.SQL_FIND_PRODUCT_GROUPS_BY_PRODUCT_ID.replace(":id", "$1");
     private final Db database;
 
     public ProductDaoAsyncCallback(Db database) {
@@ -40,4 +44,33 @@ public class ProductDaoAsyncCallback {
             errorConsumer.accept(new IllegalArgumentException("Product not found"));
         }
     }
+
+    public void findProductGroupsById(int id, Consumer<List<ProductGroup>> productGroupConsumer, Consumer<Throwable> errorConsumer) {
+        database.query(SQL_FIND_PRODUCT_GROUPS_BY_PRODUCT_ID, Collections.singletonList(id),
+                result -> {
+                    consumefindProductGroupsByIdResult(result, productGroupConsumer, errorConsumer);
+                },
+                errorConsumer);
+    }
+
+    private void consumefindProductGroupsByIdResult(ResultSet resultSet, Consumer<List<ProductGroup>> productGroupConsumer, Consumer<Throwable> errorConsumer) {
+        final Iterator<Row> sqlIterator = resultSet.iterator();
+        if (sqlIterator.hasNext()) {
+            productGroupConsumer.accept(consumeListOfProductGroups(sqlIterator));
+        } else {
+            productGroupConsumer.accept(Collections.emptyList());
+        }
+    }
+
+    public static List<ProductGroup> consumeListOfProductGroups(Iterator<Row> sqlIterator) {
+        final List<ProductGroup> productGroups = new ArrayList<>();
+        while (sqlIterator.hasNext()) {
+            final Row row = sqlIterator.next();
+            final int id = row.getInt(0);
+            final String name = row.getString(1);
+            productGroups.add(ProductGroup.createGroup(name, id));
+        }
+        return productGroups;
+    }
+
 }

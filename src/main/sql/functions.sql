@@ -5,6 +5,23 @@ CREATE TABLE product
   CONSTRAINT "PK_PRODUCT" PRIMARY KEY (id)
 );
 
+
+CREATE TABLE product_group
+(
+  id integer NOT NULL,
+  name character varying(64) NOT NULL,
+  CONSTRAINT "PK_PRODUCT_GROUP" PRIMARY KEY (id)
+)
+;
+
+CREATE TABLE product_to_group
+(
+  product_id integer NOT NULL,
+  product_group_id integer NOT NULL,
+  CONSTRAINT "PK_PRODUCT_TO_GROUP" PRIMARY KEY (product_id, product_group_id)
+)
+;
+
 CREATE OR REPLACE FUNCTION find_product_name(integer)
   RETURNS character varying AS
 $BODY$
