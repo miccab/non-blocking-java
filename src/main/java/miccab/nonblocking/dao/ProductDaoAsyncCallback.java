@@ -48,12 +48,12 @@ public class ProductDaoAsyncCallback {
     public void findProductGroupsById(int id, Consumer<List<ProductGroup>> productGroupConsumer, Consumer<Throwable> errorConsumer) {
         database.query(SQL_FIND_PRODUCT_GROUPS_BY_PRODUCT_ID, Collections.singletonList(id),
                 result -> {
-                    consumefindProductGroupsByIdResult(result, productGroupConsumer, errorConsumer);
+                    consumeFindProductGroupsByIdResult(result, productGroupConsumer, errorConsumer);
                 },
                 errorConsumer);
     }
 
-    private void consumefindProductGroupsByIdResult(ResultSet resultSet, Consumer<List<ProductGroup>> productGroupConsumer, Consumer<Throwable> errorConsumer) {
+    private void consumeFindProductGroupsByIdResult(ResultSet resultSet, Consumer<List<ProductGroup>> productGroupConsumer, Consumer<Throwable> errorConsumer) {
         final Iterator<Row> sqlIterator = resultSet.iterator();
         if (sqlIterator.hasNext()) {
             productGroupConsumer.accept(consumeListOfProductGroups(sqlIterator));

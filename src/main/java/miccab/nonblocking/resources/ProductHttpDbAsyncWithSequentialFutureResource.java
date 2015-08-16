@@ -1,8 +1,9 @@
 package miccab.nonblocking.resources;
 
-import com.google.common.collect.ImmutableList;
 import miccab.nonblocking.model.Product;
 import miccab.nonblocking.dao.ProductDaoAsyncFuture;
+import miccab.nonblocking.model.ProductGroup;
+import miccab.nonblocking.model.ProductWithGroups;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -31,33 +32,31 @@ public class ProductHttpDbAsyncWithSequentialFutureResource {
 // stack traces: we see "lambda" as method name. maybe meth reference? but closures are not possible ...
      ////////////////// read further: http://baddotrobot.com/blog/2014/02/18/method-references-in-java8/
     @GET
-    public void findById(@QueryParam("id") List<Integer> ids, @Suspended AsyncResponse asyncResponse) {
+    public void findById(@QueryParam("id") int id, @Suspended AsyncResponse asyncResponse) {
         asyncResponse.setTimeout(10, TimeUnit.SECONDS);
         // NOTICE: assumption is that no synchronization is needed for List as there should be no race condition to populate it
         //         furthermore, assumption is that visibility between threads (if any) after mods to list are guaranteed by CompletableFuture (follows happens before)
-        CompletableFuture<List<Product>> finalResult = CompletableFuture.completedFuture(ImmutableList.of());
-        for (Integer id : ids) {
-            finalResult = finalResult.thenCompose(productsAccumulated -> {
-                if (productsAccumulated.size() == 1) throw new IllegalArgumentException("asf");
-                if (asyncResponse.isDone()) {
-                    return CompletableFuture.completedFuture(ImmutableList.of());
-                } else {
-                    final CompletableFuture<Product> productFound = productDao.findNameById(id);
-                    return productFound.thenApply(product -> ImmutableList.<Product>builder().addAll(productsAccumulated).add(product).build());
-                }
-            });
-        }
-        finalResult.whenComplete((products, error) -> {
-            consumeProductsOrError(asyncResponse, products, error);
+        final CompletableFuture<Product> product = productDao.findNameById(id);
+        final CompletableFuture<ProductWithGroups> finalResult = product.thenCompose(productFound -> {
+            if (asyncResponse.isDone()) {
+                return CompletableFuture.completedFuture(new ProductWithGroups());
+            } else {
+                final CompletableFuture<List<ProductGroup>> productGroups = productDao.findProductGroupsById(id);
+                return productGroups.thenApply(productGroupsFound -> ProductWithGroups.createProductWithGroups(productFound, productGroupsFound));
+            }
+
+        });
+        finalResult.whenComplete((productWithGroups, error) -> {
+            consumeProductWithGroupOrError(asyncResponse, productWithGroups, error);
         });
     }
 
-    private void consumeProductsOrError(AsyncResponse asyncResponse, List<Product> products, Throwable error) {
+    private void consumeProductWithGroupOrError(AsyncResponse asyncResponse, ProductWithGroups productWithGroups, Throwable error) {
         if (!asyncResponse.isDone()) {
             if (error != null) {
                 asyncResponse.resume(error);
             } else {
-                asyncResponse.resume(products);
+                asyncResponse.resume(productWithGroups);
             }
         }
     }

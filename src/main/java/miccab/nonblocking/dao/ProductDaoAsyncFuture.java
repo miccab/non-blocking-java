@@ -4,11 +4,14 @@ import com.github.pgasync.Db;
 import com.github.pgasync.ResultSet;
 import com.github.pgasync.Row;
 import miccab.nonblocking.model.Product;
+import miccab.nonblocking.model.ProductGroup;
 
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static miccab.nonblocking.dao.ProductDaoAsyncCallback.consumeListOfProductGroups;
 import static miccab.nonblocking.model.Product.createProduct;
 
 /**
@@ -16,6 +19,7 @@ import static miccab.nonblocking.model.Product.createProduct;
  */
 public class ProductDaoAsyncFuture {
     private final static String SQL_FIND_BY_ID = ProductDao.SQL_FIND_BY_ID.replace(":id", "$1");
+    private final static String SQL_FIND_PRODUCT_GROUPS_BY_PRODUCT_ID = ProductDao.SQL_FIND_PRODUCT_GROUPS_BY_PRODUCT_ID.replace(":id", "$1");
     private final Db database;
 
     public ProductDaoAsyncFuture(Db database) {
@@ -41,6 +45,25 @@ public class ProductDaoAsyncFuture {
             futureResult.complete(product);
         } else {
             futureResult.completeExceptionally(new IllegalArgumentException("Product not found"));
+        }
+    }
+
+    public CompletableFuture<List<ProductGroup>> findProductGroupsById(int id) {
+        final CompletableFuture<List<ProductGroup>> futureResult = new CompletableFuture<>();
+        database.query(SQL_FIND_PRODUCT_GROUPS_BY_PRODUCT_ID, Collections.singletonList(id),
+                result -> {
+                    consumeFindProductGroupsByIdResult(result, futureResult);
+                },
+                futureResult::completeExceptionally);
+        return futureResult;
+    }
+
+    private void consumeFindProductGroupsByIdResult(ResultSet resultSet, CompletableFuture<List<ProductGroup>> productGroupConsumer) {
+        final Iterator<Row> sqlIterator = resultSet.iterator();
+        if (sqlIterator.hasNext()) {
+            productGroupConsumer.complete(consumeListOfProductGroups(sqlIterator));
+        } else {
+            productGroupConsumer.complete(Collections.emptyList());
         }
     }
 
