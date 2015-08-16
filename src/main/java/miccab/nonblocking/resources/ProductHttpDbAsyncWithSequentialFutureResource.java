@@ -46,6 +46,7 @@ public class ProductHttpDbAsyncWithSequentialFutureResource {
             }
 
         });
+        // TODO: can be async call and therefore not block PGASYNC single thread....
         finalResult.whenComplete((productWithGroups, error) -> {
             consumeProductWithGroupOrError(asyncResponse, productWithGroups, error);
         });
