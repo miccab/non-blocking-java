@@ -13,6 +13,13 @@ import javax.validation.constraints.NotNull;
 public class ProductConfiguration extends Configuration {
     @Valid
     @NotNull
+    private String databaseName;
+    @Valid
+    @NotNull
+    private String databaseHost;
+
+    @Valid
+    @NotNull
     private DataSourceFactory database = new DataSourceFactory();
 
     @JsonProperty("database")
@@ -22,5 +29,23 @@ public class ProductConfiguration extends Configuration {
 
     public void setDatabase(DataSourceFactory database) {
         this.database = database;
+    }
+
+    @JsonProperty
+    public String getDatabaseName() {
+        return databaseName;
+    }
+
+    public void setDatabaseName(String databaseName) {
+        this.databaseName = databaseName;
+    }
+
+    @JsonProperty
+    public String getDatabaseHost() {
+        return databaseHost;
+    }
+
+    public void setDatabaseHost(String databaseHost) {
+        this.databaseHost = databaseHost;
     }
 }

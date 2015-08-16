@@ -41,10 +41,12 @@ public class ProductApplication extends Application<ProductConfiguration> {
         final DBIFactory factory = new DBIFactory();
         final DBI jdbi = factory.build(environment, configuration.getDataSourceFactory(), "postgresql");
         final ProductDao productDao = jdbi.onDemand(ProductDao.class);
-        final Db pgAsyncDb = createPgAsyncDb(configuration.getDataSourceFactory());
+        final Db pgAsyncDb = createPgAsyncDb(configuration);
 
         environment.jersey().register(new ProductResource(productDao));
-        environment.jersey().register(new ProductHttpAsyncResource(productDao, Executors.newFixedThreadPool(32, new ThreadFactoryBuilder().setDaemon(true).setNameFormat("mythread_%d").build())));
+        environment.jersey().register(new ProductHttpAsyncResource(productDao,
+                                                                   Executors.newFixedThreadPool(configuration.getDataSourceFactory().getMaxSize(),
+                                                                                                new ThreadFactoryBuilder().setDaemon(true).setNameFormat("mythread_%d").build())));
         environment.jersey().register(new ProductHttpDbAsyncResource(pgAsyncDb));
         environment.jersey().register(new ProductHttpDbAsyncWithCallbackResource(new ProductDaoAsyncCallback(pgAsyncDb)));
         environment.jersey().register(new ProductHttpDbAsyncWithSequentialCallbackResource(new ProductDaoAsyncCallback(pgAsyncDb)));
@@ -55,11 +57,12 @@ public class ProductApplication extends Application<ProductConfiguration> {
         environment.jersey().register(new ProductHttpDbAsyncWithObservableResource(new ProductDaoAsyncObservable(pgAsyncDb)));
     }
 
-    private Db createPgAsyncDb(DataSourceFactory dataSourceFactory) {
+    private Db createPgAsyncDb(ProductConfiguration productConfiguration) {
+        final DataSourceFactory dataSourceFactory = productConfiguration.getDataSourceFactory();
         return new ConnectionPoolBuilder()
-                .hostname("localhost")
+                .hostname(productConfiguration.getDatabaseHost())
                 .poolSize(dataSourceFactory.getMaxSize())
-                .database("dropwizard")
+                .database(productConfiguration.getDatabaseName())
                 .username(dataSourceFactory.getUser())
                 .password(dataSourceFactory.getPassword())
                 .build();

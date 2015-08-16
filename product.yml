@@ -1,3 +1,6 @@
+databaseName: dropwizard
+databaseHost: localhost
+
 database:
   # the name of your JDBC driver
   driverClass: org.postgresql.Driver
@@ -38,3 +41,27 @@ database:
 
   # the minimum amount of time an connection must sit idle in the pool before it is eligible for eviction
   minIdleTime: 1 minute
+
+logging:
+
+  # The default level of all loggers. Can be OFF, ERROR, WARN, INFO, DEBUG, TRACE, or ALL.
+  level: INFO
+
+  # Logger-specific levels.
+  loggers:
+
+    miccab.nonblocking: TRACE
+    org.eclipse.jetty.server: DEBUG
+    com.github.pgasync: DEBUG
+    io.netty: DEBUG
+
+  appenders:
+    - type: console
+      logFormat: "[%d{HH:mm:ss.SSS}] [%-6level] [%t] %logger{5} - %X{code} %msg %n"
+    - type: file
+      logFormat: "[%d{HH:mm:ss.SSS}] [%-6level] [%t] %logger{5} - %X{code} %msg %n"
+      currentLogFilename: application.log
+      archive: true
+      archivedLogFilenamePattern: application-%d{yyyy-MM-dd}-%i.log.gz
+      archivedFileCount: 2
+

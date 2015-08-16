@@ -5,6 +5,8 @@ import com.github.pgasync.ResultSet;
 import com.github.pgasync.Row;
 import miccab.nonblocking.model.Product;
 import miccab.nonblocking.dao.ProductDao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -25,6 +27,7 @@ import static miccab.nonblocking.model.Product.createProduct;
 @Path("/productHttpDbAsync")
 @Produces(MediaType.APPLICATION_JSON)
 public class ProductHttpDbAsyncResource {
+    private static final Logger LOG = LoggerFactory.getLogger(ProductHttpDbAsyncResource.class);
     private final static String SQL_FIND_BY_ID = ProductDao.SQL_FIND_BY_ID.replace(":id", "$1");
     private final Db database;
 
@@ -34,6 +37,7 @@ public class ProductHttpDbAsyncResource {
 
     @GET
     public void findById(@QueryParam("id") int id, @Suspended AsyncResponse asyncResponse) {
+        LOG.trace("Finding product by id:{}", id);
         asyncResponse.setTimeout(10, TimeUnit.SECONDS);
         database.query(SQL_FIND_BY_ID, Collections.singletonList(id),
                        result -> {
@@ -43,6 +47,7 @@ public class ProductHttpDbAsyncResource {
     }
 
     private void consumeFindByIdResult(ResultSet resultSet, int id, AsyncResponse asyncResponse) {
+        LOG.trace("Consuming DB Query result for product by id:{}", id);
         final Iterator<Row> sqlIterator = resultSet.iterator();
         if (sqlIterator.hasNext()) {
             final String name = sqlIterator.next().getString(0);

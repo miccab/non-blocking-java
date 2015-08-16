@@ -2,6 +2,8 @@ package miccab.nonblocking.resources;
 
 import miccab.nonblocking.model.Product;
 import miccab.nonblocking.dao.ProductDao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -19,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 @Path("/productHttpAsync")
 @Produces(MediaType.APPLICATION_JSON)
 public class ProductHttpAsyncResource {
+    private static final Logger LOG = LoggerFactory.getLogger(ProductHttpAsyncResource.class);
     private final ProductDao productDao;
     private final ExecutorService executorService;
 
@@ -29,6 +32,7 @@ public class ProductHttpAsyncResource {
 
     @GET
     public void findById(@QueryParam("id") int id, @Suspended AsyncResponse asyncResponse) {
+        LOG.trace("Finding product by id:{}", id);
         asyncResponse.setTimeout(10, TimeUnit.SECONDS);
         executorService.submit(new AsyncFindById(id, asyncResponse));
     }
@@ -44,6 +48,7 @@ public class ProductHttpAsyncResource {
 
         public void run() {
             if (! asyncResponse.isDone()) {
+                LOG.trace("Calling DAO for product by id:{}", id);
                 final Product product = new Product();
                 product.setId(id);
                 product.setName(productDao.findNameById(id));
