@@ -24,14 +24,14 @@ class BasicSimulation extends Simulation {
   val feederSlow = csv("product_ids_slow.csv").circular
 
   val scnFast = scenario("Get Product details fast").feed(feederFast)
-    .repeat(numOfRepeatsPerUser, "i") { exec(http("request")
+    .repeat(numOfRepeatsPerUser, "i") { exec(http("request_fast")
       .get(httpResource)
       .queryParam("id", "${product_id}"))
       .pause(1)
   }
 
   val scnSlow = scenario("Get Product details slow").feed(feederSlow)
-    .repeat(numOfRepeatsPerUser, "i") { exec(http("request")
+    .repeat(numOfRepeatsPerUser, "i") { exec(http("request_slow")
     .get(httpResource)
     .queryParam("id", "${product_id}"))
     .pause(1)

@@ -19,8 +19,13 @@ function start_monitoring()
     echo $last_pid >> pids
 
     java_server_pid=`ps -ef | grep java | grep jar | grep non-blocking | awk '{print $2}'`
-    echo "Monitoring mem utilization ..."
-    top -d 2 -bp $java_server_pid > monitor_memutil_${name}_${suffix} 2>&1 &
+    echo "Monitoring process mem utilization ..."
+    top -d 2 -bp $java_server_pid > monitor_procmemutil_${name}_${suffix} 2>&1 &
+    last_pid=$!
+    echo $last_pid >> pids
+
+    echo "Monitoring jvm mem utilization ..."
+    jstat -gc $java_server_pid 2s > monitor_jvmmemutil_${name}_${suffix} 2>&1 &
     last_pid=$!
     echo $last_pid >> pids
 
@@ -33,6 +38,7 @@ function start_monitoring()
 function monitor_threads() {
     pid=$1
     while true; do
+        date
         jcmd $pid PerfCounter.print | grep "java.threads"
         sleep 2
     done
