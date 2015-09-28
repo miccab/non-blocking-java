@@ -34,6 +34,7 @@ function start_monitoring()
     last_pid=$!
     echo $last_pid >> pids
 }
+#http://www.ibm.com/developerworks/library/j-nativememory-linux/
 
 function monitor_threads() {
     pid=$1
