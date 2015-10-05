@@ -3,5 +3,6 @@ target
 *.iml
 dependency-reduced-pom.xml
 *.log
+node_modules
 
 
