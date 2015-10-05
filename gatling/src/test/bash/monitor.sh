@@ -5,6 +5,10 @@ name=$2
 
 function start_monitoring()
 {
+    if [ -f pids ]; then
+        echo "Pids file already exists. Cannot start monitoring."
+        exit 1
+    fi
     name=$1
     suffix=`date +%Y%m%d%H%M%S`
 
