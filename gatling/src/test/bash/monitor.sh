@@ -21,6 +21,11 @@ function start_monitoring()
     sar -w 2 > monitor_cpuswitch_${name}_${suffix} 2>&1 &
     last_pid=$!
     echo $last_pid >> pids
+}
+function start_monitoring_java()
+{
+    name=$1
+    suffix=`date +%Y%m%d%H%M%S`
 
     java_server_pid=`ps -ef | grep java | grep jar | grep non-blocking | awk '{print $2}'`
     echo "Monitoring process mem utilization ..."
@@ -38,6 +43,18 @@ function start_monitoring()
     last_pid=$!
     echo $last_pid >> pids
 }
+function start_monitoring_nodejs()
+{
+    name=$1
+    suffix=`date +%Y%m%d%H%M%S`
+
+    java_server_pid=`ps -ef | grep 'node server.js' | grep -v grep | awk '{print $2}'`
+    echo "Monitoring process mem utilization ..."
+    top -d 2 -bp $java_server_pid > monitor_procmemutil_${name}_${suffix} 2>&1 &
+    last_pid=$!
+    echo $last_pid >> pids
+}
+
 #http://www.ibm.com/developerworks/library/j-nativememory-linux/
 
 function monitor_threads() {
@@ -62,14 +79,19 @@ function stop_monitoring() {
 }
 
 case $operation in
-    start)
+    start_java)
         start_monitoring $name
+        start_monitoring_java $name
+        ;;
+    start_nodejs)
+        start_monitoring $name
+        start_monitoring_nodejs $name
         ;;
     stop)
         stop_monitoring
         ;;
     *)
-        echo "usage $0 start|stop"
+        echo "usage $0 start_java|start_nodejs|stop [name]"
         exit 1
 esac
 

@@ -51,5 +51,6 @@ object BasicSimulation {
     case "sync" => "/product"
     case "async_http" => "/productHttpAsync"
     case "async_http_db" => "/productHttpDbAsync"
+    case "nodejs" => "/productNodeJs"
   }
 }
