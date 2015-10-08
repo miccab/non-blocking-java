@@ -10,7 +10,7 @@ function start_monitoring()
         exit 1
     fi
     name=$1
-    suffix=`date +%Y%m%d%H%M%S`
+    suffix=$2
 
     echo "Monitoring cpu utilization ..."
     sar -u 2 > monitor_cpuutil_${name}_${suffix} 2>&1 &
@@ -26,6 +26,7 @@ function start_monitoring_java()
 {
     name=$1
     suffix=`date +%Y%m%d%H%M%S`
+    start_monitoring $name $suffix
 
     java_server_pid=`ps -ef | grep java | grep jar | grep non-blocking | awk '{print $2}'`
     echo "Monitoring process mem utilization ..."
@@ -47,6 +48,7 @@ function start_monitoring_nodejs()
 {
     name=$1
     suffix=`date +%Y%m%d%H%M%S`
+    start_monitoring $name $suffix
 
     java_server_pid=`ps -ef | grep 'node server.js' | grep -v grep | awk '{print $2}'`
     echo "Monitoring process mem utilization ..."
@@ -80,11 +82,9 @@ function stop_monitoring() {
 
 case $operation in
     start_java)
-        start_monitoring $name
         start_monitoring_java $name
         ;;
     start_nodejs)
-        start_monitoring $name
         start_monitoring_nodejs $name
         ;;
     stop)
