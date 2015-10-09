@@ -59,12 +59,35 @@ public class ProductApplication extends Application<ProductConfiguration> {
 
     private Db createPgAsyncDb(ProductConfiguration productConfiguration) {
         final DataSourceFactory dataSourceFactory = productConfiguration.getDataSourceFactory();
+        final DbUrlParts dbUrlParts = createDbUrlParts(dataSourceFactory.getUrl());
         return new ConnectionPoolBuilder()
-                .hostname(productConfiguration.getDatabaseHost())
+                .hostname(dbUrlParts.getHost())
                 .poolSize(dataSourceFactory.getMaxSize())
-                .database(productConfiguration.getDatabaseName())
+                .database(dbUrlParts.getName())
                 .username(dataSourceFactory.getUser())
                 .password(dataSourceFactory.getPassword())
                 .build();
+    }
+
+    private DbUrlParts createDbUrlParts(String url) {
+        final String [] parts = url.split("/");
+        return new DbUrlParts(parts[2], parts[3]);
+    }
+}
+
+class DbUrlParts {
+    private final String host, name;
+
+    DbUrlParts(String host, String name) {
+        this.host = host;
+        this.name = name;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public String getName() {
+        return name;
     }
 }

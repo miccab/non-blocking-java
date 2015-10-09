@@ -1,6 +1,3 @@
-databaseName: dropwizard
-databaseHost: localhost
-
 database:
   # the name of your JDBC driver
   driverClass: org.postgresql.Driver
@@ -12,7 +9,7 @@ database:
   password: dropwizard
 
   # the JDBC URL
-  url: jdbc:postgresql://localhost/dropwizard
+  url: jdbc:postgresql://192.168.0.2/dropwizard
 
   # any properties specific to your JDBC driver:
   properties:
@@ -45,15 +42,15 @@ database:
 logging:
 
   # The default level of all loggers. Can be OFF, ERROR, WARN, INFO, DEBUG, TRACE, or ALL.
-  level: INFO
+  level: OFF
 
   # Logger-specific levels.
   loggers:
 
-    miccab.nonblocking: TRACE
-    org.eclipse.jetty.server: DEBUG
-    com.github.pgasync: DEBUG
-    io.netty: DEBUG
+    miccab.nonblocking: OFF
+    org.eclipse.jetty.server: OFF
+    com.github.pgasync: OFF
+    io.netty: OFF
 
   appenders:
     - type: console
@@ -64,4 +61,15 @@ logging:
       archive: true
       archivedLogFilenamePattern: application-%d{yyyy-MM-dd}-%i.log.gz
       archivedFileCount: 2
+
+server:
+  type: default
+  # acceptors (2) + selectors (4) + N (for requests)
+  minThreads: 7
+  maxThreads: 7
+  adminConnectors: []
+#  adminMinThreads: 2
+#  adminMaxThreads: 2
+  requestLog:
+     appenders: []
 

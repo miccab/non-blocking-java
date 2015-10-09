@@ -2,13 +2,13 @@ var express    = require('express');
 var app        = express();
 var bodyParser = require('body-parser');
 var pg = require('pg');
-pg.defaults.poolSize = 100;
+pg.defaults.poolSize = 32;
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 var port = process.env.PORT || 8080;
-var connectionString = "postgres://dropwizard:dropwizard@localhost/dropwizard";
+var connectionString = "postgres://dropwizard:dropwizard@192.168.0.2/dropwizard";
 
 var router = express.Router();
 
