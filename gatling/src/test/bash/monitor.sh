@@ -57,8 +57,6 @@ function start_monitoring_nodejs()
     echo $last_pid >> pids
 }
 
-#http://www.ibm.com/developerworks/library/j-nativememory-linux/
-
 function monitor_threads() {
     pid=$1
     while true; do
