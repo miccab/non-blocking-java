@@ -14,6 +14,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -23,9 +24,11 @@ import java.util.concurrent.TimeUnit;
 @Produces(MediaType.APPLICATION_JSON)
 public class ProductHttpDbAsyncWithSequentialFutureResource {
     private final ProductDaoAsyncFuture productDao;
+    private final Executor executorToCompleteCalls;
 
-    public ProductHttpDbAsyncWithSequentialFutureResource(ProductDaoAsyncFuture productDao) {
+    public ProductHttpDbAsyncWithSequentialFutureResource(ProductDaoAsyncFuture productDao, Executor executorToCompleteCalls) {
         this.productDao = productDao;
+        this.executorToCompleteCalls = executorToCompleteCalls;
     }
 // debuging: Intellij issue to see variable: http://stackoverflow.com/questions/26895708/debugger-cannot-see-local-variable-in-a-lambda
     ///  vs anon class: variable visible. new instances??
@@ -34,8 +37,6 @@ public class ProductHttpDbAsyncWithSequentialFutureResource {
     @GET
     public void findById(@QueryParam("id") int id, @Suspended AsyncResponse asyncResponse) {
         asyncResponse.setTimeout(10, TimeUnit.SECONDS);
-        // NOTICE: assumption is that no synchronization is needed for List as there should be no race condition to populate it
-        //         furthermore, assumption is that visibility between threads (if any) after mods to list are guaranteed by CompletableFuture (follows happens before)
         final CompletableFuture<Product> product = productDao.findNameById(id);
         final CompletableFuture<ProductWithGroups> finalResult = product.thenCompose(productFound -> {
             if (asyncResponse.isDone()) {
@@ -46,19 +47,16 @@ public class ProductHttpDbAsyncWithSequentialFutureResource {
             }
 
         });
-        // TODO: can be async call and therefore not block PGASYNC single thread....
-        finalResult.whenComplete((productWithGroups, error) -> {
+        finalResult.whenCompleteAsync((productWithGroups, error) -> {
             consumeProductWithGroupOrError(asyncResponse, productWithGroups, error);
-        });
+        }, executorToCompleteCalls);
     }
 
     private void consumeProductWithGroupOrError(AsyncResponse asyncResponse, ProductWithGroups productWithGroups, Throwable error) {
-        if (!asyncResponse.isDone()) {
-            if (error != null) {
-                asyncResponse.resume(error);
-            } else {
-                asyncResponse.resume(productWithGroups);
-            }
+        if (error != null) {
+            asyncResponse.resume(error);
+        } else {
+            asyncResponse.resume(productWithGroups);
         }
     }
 }

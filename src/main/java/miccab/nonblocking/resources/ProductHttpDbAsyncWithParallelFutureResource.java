@@ -2,6 +2,8 @@ package miccab.nonblocking.resources;
 
 import miccab.nonblocking.model.Product;
 import miccab.nonblocking.dao.ProductDaoAsyncFuture;
+import miccab.nonblocking.model.ProductGroup;
+import miccab.nonblocking.model.ProductWithGroups;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -28,24 +30,20 @@ public class ProductHttpDbAsyncWithParallelFutureResource {
     }
 
     @GET
-    public void findById(@QueryParam("id1") int id1, @QueryParam("id2") int id2, @Suspended AsyncResponse asyncResponse) {
+    public void findById(@QueryParam("id") int id, @Suspended AsyncResponse asyncResponse) {
         asyncResponse.setTimeout(10, TimeUnit.SECONDS);
-        final CompletableFuture<Product> product1Found = productDao.findNameById(id1);
-        final CompletableFuture<Product> product2Found = productDao.findNameById(id2);
-        final CompletableFuture<List<Product>> finalResult = product1Found.thenCombine(product2Found,
-                                                                                      (product1, product2) -> Arrays.asList(product1, product2));
-        finalResult.whenComplete((products,error) -> {
-            consumeProductsOrError(asyncResponse, products, error);
-        });
+        final CompletableFuture<Product> product = productDao.findNameById(id);
+        final CompletableFuture<List<ProductGroup>> productGroups = productDao.findProductGroupsById(id);
+        final CompletableFuture<ProductWithGroups> finalResult = product.thenCombine(productGroups,
+                                                                                     ProductWithGroups::createProductWithGroups);
+        finalResult.whenComplete((productWithGroups,error) -> consumeProductsOrError(asyncResponse, productWithGroups, error));
     }
 
-    private void consumeProductsOrError(AsyncResponse asyncResponse, List<Product> products, Throwable error) {
-        if (!asyncResponse.isDone()) {
-            if (error != null) {
-                asyncResponse.resume(error);
-            } else {
-                asyncResponse.resume(products);
-            }
+    private void consumeProductsOrError(AsyncResponse asyncResponse, ProductWithGroups productWithGroups, Throwable error) {
+        if (error != null) {
+            asyncResponse.resume(error);
+        } else {
+            asyncResponse.resume(productWithGroups);
         }
     }
 }

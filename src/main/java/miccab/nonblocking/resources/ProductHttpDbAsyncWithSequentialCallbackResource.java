@@ -13,6 +13,7 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import java.util.*;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -23,9 +24,11 @@ import java.util.function.Consumer;
 @Produces(MediaType.APPLICATION_JSON)
 public class ProductHttpDbAsyncWithSequentialCallbackResource {
     private final ProductDaoAsyncCallback productDao;
+    private final Executor executorToCompleteCalls;
 
-    public ProductHttpDbAsyncWithSequentialCallbackResource(ProductDaoAsyncCallback productDao) {
+    public ProductHttpDbAsyncWithSequentialCallbackResource(ProductDaoAsyncCallback productDao, Executor executorToCompleteCalls) {
         this.productDao = productDao;
+        this.executorToCompleteCalls = executorToCompleteCalls;
     }
 
     @GET
@@ -68,7 +71,7 @@ public class ProductHttpDbAsyncWithSequentialCallbackResource {
 
         @Override
         public void accept(List<ProductGroup> productGroups) {
-            asyncResponse.resume(ProductWithGroups.createProductWithGroups(product, productGroups));
+            executorToCompleteCalls.execute(() -> asyncResponse.resume(ProductWithGroups.createProductWithGroups(product, productGroups)));
         }
     }
 }
