@@ -40,7 +40,9 @@ public class ProductHttpDbAsyncWithSequentialFutureResource {
         final CompletableFuture<Product> product = productDao.findNameById(id);
         final CompletableFuture<ProductWithGroups> finalResult = product.thenCompose(productFound -> {
             if (asyncResponse.isDone()) {
-                return CompletableFuture.completedFuture(new ProductWithGroups());
+                final CompletableFuture<ProductWithGroups> error = new CompletableFuture<>();
+                error.completeExceptionally(new IllegalStateException("Response already done"));
+                return error;
             } else {
                 final CompletableFuture<List<ProductGroup>> productGroups = productDao.findProductGroupsById(id);
                 return productGroups.thenApply(productGroupsFound -> ProductWithGroups.createProductWithGroups(productFound, productGroupsFound));

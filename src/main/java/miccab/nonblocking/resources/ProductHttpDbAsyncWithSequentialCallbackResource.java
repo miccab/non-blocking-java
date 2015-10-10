@@ -4,6 +4,8 @@ import miccab.nonblocking.model.Product;
 import miccab.nonblocking.dao.ProductDaoAsyncCallback;
 import miccab.nonblocking.model.ProductGroup;
 import miccab.nonblocking.model.ProductWithGroups;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -23,6 +25,7 @@ import java.util.function.Consumer;
 @Path("/productHttpDbAsyncWithSequentialCallback")
 @Produces(MediaType.APPLICATION_JSON)
 public class ProductHttpDbAsyncWithSequentialCallbackResource {
+    private static final Logger LOG = LoggerFactory.getLogger(ProductHttpDbAsyncWithSequentialCallbackResource.class);
     private final ProductDaoAsyncCallback productDao;
     private final Executor executorToCompleteCalls;
 
@@ -48,7 +51,9 @@ public class ProductHttpDbAsyncWithSequentialCallbackResource {
 
         @Override
         public void accept(Product product) {
-            if (!asyncResponse.isDone()) {
+            if (asyncResponse.isDone()) {
+                LOG.info("Response already done");
+            } else {
                 doAccept(product);
             }
         }
