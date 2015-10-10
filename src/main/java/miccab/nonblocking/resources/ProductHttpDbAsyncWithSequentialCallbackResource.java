@@ -31,8 +31,6 @@ public class ProductHttpDbAsyncWithSequentialCallbackResource {
     @GET
     public void findById(@QueryParam("id") int id, @Suspended AsyncResponse asyncResponse) {
         asyncResponse.setTimeout(10, TimeUnit.SECONDS);
-        // NOTICE: assumption is that no sync is needed for the list as there should be no race condition
-        //         futhermore, if DAO uses Executors (or any other scheduling) then it must be done using happens before rules to guarantee visibility of mods
         productDao.findNameById(id,
                                 new ProductConsumer(asyncResponse),
                                 asyncResponse::resume);

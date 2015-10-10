@@ -50,25 +50,19 @@ public class ProductHttpDbAsyncWithParallelCallbackResource {
 
     private void consumeProduct(AsyncResponse asyncResponse, Product productFound, AtomicReference<Product> product, AtomicReference<List<ProductGroup>> productGroups) {
         product.set(productFound);
-        if (productGroups.get() != null) {
-            // this is needed if we do not want to assume that DAO is single threaded
-            synchronized (this) {
-                if (! asyncResponse.isDone()) {
-                    asyncResponse.resume(ProductWithGroups.createProductWithGroups(productFound, productGroups.get()));
-                }
-            }
+        // this is needed if we do not want to assume that DAO is single threaded
+        final List<ProductGroup> productGroupsFound = productGroups.getAndSet(null);
+        if (productGroupsFound != null) {
+            asyncResponse.resume(ProductWithGroups.createProductWithGroups(productFound, productGroupsFound));
         }
     }
 
     private void consumeProductGroups(AsyncResponse asyncResponse, List<ProductGroup> productGroupsFound, AtomicReference<Product> product, AtomicReference<List<ProductGroup>> productGroups) {
         productGroups.set(productGroupsFound);
-        if (product.get() != null) {
-            // this is needed if we do not want to assume that DAO is single threaded
-            synchronized (this) {
-                if (! asyncResponse.isDone()) {
-                    asyncResponse.resume(ProductWithGroups.createProductWithGroups(product.get(), productGroupsFound));
-                }
-            }
+        // this is needed if we do not want to assume that DAO is single threaded
+        final Product productFound = product.getAndSet(null);
+        if (productFound != null) {
+            asyncResponse.resume(ProductWithGroups.createProductWithGroups(productFound, productGroupsFound));
         }
     }
 }
