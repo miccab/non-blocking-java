@@ -2,7 +2,6 @@ package miccab.nonblocking.resources;
 
 import miccab.nonblocking.dao.ProductDaoAsyncFuture;
 import miccab.nonblocking.model.Product;
-import miccab.nonblocking.model.ProductGroup;
 import miccab.nonblocking.model.ProductWithGroups;
 import org.junit.Before;
 import org.junit.Test;
