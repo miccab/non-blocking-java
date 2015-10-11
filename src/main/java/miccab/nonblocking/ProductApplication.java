@@ -64,6 +64,7 @@ public class ProductApplication extends Application<ProductConfiguration> {
 
         environment.jersey().register(new ProductHttpDbAsyncWithParallelCallbackResource(productDaoAsyncCallback));
         environment.jersey().register(new ProductHttpDbAsyncWithParallelFutureResource(productDaoAsyncFuture));
+        environment.jersey().register(new ProductHttpDbAsyncWithParallelObservableResource(productDaoAsyncObservable));
     }
 
     private Db createPgAsyncDb(ProductConfiguration productConfiguration) {
