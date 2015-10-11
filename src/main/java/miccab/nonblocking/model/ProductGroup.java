@@ -6,8 +6,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Created by michal on 16.08.15.
  */
 public class ProductGroup {
-    private String name;
     private int id;
+    private String name;
 
     @JsonProperty
     public String getName() {
