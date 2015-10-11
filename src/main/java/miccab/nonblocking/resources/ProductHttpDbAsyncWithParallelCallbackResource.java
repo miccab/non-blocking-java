@@ -37,14 +37,10 @@ public class ProductHttpDbAsyncWithParallelCallbackResource {
         final AtomicReference<List<ProductGroup>> productGroups = new AtomicReference<>();
         final AtomicReference<Product> product = new AtomicReference<>();
         productDao.findNameById(id,
-                productFound -> {
-                    consumeProduct(asyncResponse, productFound, product, productGroups);
-                },
+                productFound -> consumeProduct(asyncResponse, productFound, product, productGroups),
                 asyncResponse::resume);
         productDao.findProductGroupsById(id,
-                productGroupsFound -> {
-                    consumeProductGroups(asyncResponse, productGroupsFound, product, productGroups);
-                },
+                productGroupsFound -> consumeProductGroups(asyncResponse, productGroupsFound, product, productGroups),
                 asyncResponse::resume);
     }
 
