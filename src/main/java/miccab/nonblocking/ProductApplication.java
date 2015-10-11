@@ -50,13 +50,17 @@ public class ProductApplication extends Application<ProductConfiguration> {
                                                                                                 new ThreadFactoryBuilder().setDaemon(true).setNameFormat("MyDbExecutionThread_%d").build())));
         environment.jersey().register(new ProductHttpDbAsyncResource(pgAsyncDb));
         final Executor executorToCompleteCalls = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setDaemon(true).setNameFormat("MyCompletionThread_%d").build());
+
         environment.jersey().register(new ProductHttpDbAsyncWithCallbackResource(new ProductDaoAsyncCallback(pgAsyncDb)));
-        environment.jersey().register(new ProductHttpDbAsyncWithSequentialCallbackResource(new ProductDaoAsyncCallback(pgAsyncDb), executorToCompleteCalls));
-        environment.jersey().register(new ProductHttpDbAsyncWithParallelCallbackResource(new ProductDaoAsyncCallback(pgAsyncDb)));
         environment.jersey().register(new ProductHttpDbAsyncWithFutureResource(new ProductDaoAsyncFuture(pgAsyncDb)));
-        environment.jersey().register(new ProductHttpDbAsyncWithSequentialFutureResource(new ProductDaoAsyncFuture(pgAsyncDb), executorToCompleteCalls));
-        environment.jersey().register(new ProductHttpDbAsyncWithParallelFutureResource(new ProductDaoAsyncFuture(pgAsyncDb)));
         environment.jersey().register(new ProductHttpDbAsyncWithObservableResource(new ProductDaoAsyncObservable(pgAsyncDb)));
+
+        environment.jersey().register(new ProductHttpDbAsyncWithSequentialCallbackResource(new ProductDaoAsyncCallback(pgAsyncDb), executorToCompleteCalls));
+        environment.jersey().register(new ProductHttpDbAsyncWithSequentialFutureResource(new ProductDaoAsyncFuture(pgAsyncDb), executorToCompleteCalls));
+        environment.jersey().register(new ProductHttpDbAsyncWithSequentialObservableResource(new ProductDaoAsyncObservable(pgAsyncDb), executorToCompleteCalls));
+
+        environment.jersey().register(new ProductHttpDbAsyncWithParallelCallbackResource(new ProductDaoAsyncCallback(pgAsyncDb)));
+        environment.jersey().register(new ProductHttpDbAsyncWithParallelFutureResource(new ProductDaoAsyncFuture(pgAsyncDb)));
     }
 
     private Db createPgAsyncDb(ProductConfiguration productConfiguration) {

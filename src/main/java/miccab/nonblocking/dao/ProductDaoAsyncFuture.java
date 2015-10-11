@@ -29,9 +29,7 @@ public class ProductDaoAsyncFuture {
     public CompletableFuture<Product> findNameById(int id) {
         final CompletableFuture<Product> futureResult = new CompletableFuture<>();
         database.query(SQL_FIND_BY_ID, Collections.singletonList(id),
-                       result -> {
-                           consumeFindByIdResult(result, id, futureResult);
-                       },
+                       result -> consumeFindByIdResult(result, id, futureResult),
                        futureResult::completeExceptionally);
         return futureResult;
     }
@@ -51,9 +49,7 @@ public class ProductDaoAsyncFuture {
     public CompletableFuture<List<ProductGroup>> findProductGroupsById(int id) {
         final CompletableFuture<List<ProductGroup>> futureResult = new CompletableFuture<>();
         database.query(SQL_FIND_PRODUCT_GROUPS_BY_PRODUCT_ID, Collections.singletonList(id),
-                result -> {
-                    consumeFindProductGroupsByIdResult(result, futureResult);
-                },
+                result -> consumeFindProductGroupsByIdResult(result, futureResult),
                 futureResult::completeExceptionally);
         return futureResult;
     }

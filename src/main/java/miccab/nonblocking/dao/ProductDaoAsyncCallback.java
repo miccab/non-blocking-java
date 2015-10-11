@@ -28,9 +28,7 @@ public class ProductDaoAsyncCallback {
 
     public void findNameById(int id, Consumer<Product> productConsumer, Consumer<Throwable> errorConsumer) {
         database.query(SQL_FIND_BY_ID, Collections.singletonList(id),
-        result -> {
-            consumeFindByIdResult(result, id, productConsumer, errorConsumer);
-        },
+        result -> consumeFindByIdResult(result, id, productConsumer, errorConsumer),
         errorConsumer);
     }
 
@@ -47,9 +45,7 @@ public class ProductDaoAsyncCallback {
 
     public void findProductGroupsById(int id, Consumer<List<ProductGroup>> productGroupConsumer, Consumer<Throwable> errorConsumer) {
         database.query(SQL_FIND_PRODUCT_GROUPS_BY_PRODUCT_ID, Collections.singletonList(id),
-                result -> {
-                    consumeFindProductGroupsByIdResult(result, productGroupConsumer, errorConsumer);
-                },
+                result -> consumeFindProductGroupsByIdResult(result, productGroupConsumer, errorConsumer),
                 errorConsumer);
     }
 
@@ -65,12 +61,16 @@ public class ProductDaoAsyncCallback {
     public static List<ProductGroup> consumeListOfProductGroups(Iterator<Row> sqlIterator) {
         final List<ProductGroup> productGroups = new ArrayList<>();
         while (sqlIterator.hasNext()) {
-            final Row row = sqlIterator.next();
-            final int id = row.getInt(0);
-            final String name = row.getString(1);
-            productGroups.add(ProductGroup.createGroup(name, id));
+            productGroups.add(createProductGroupFromNextRow(sqlIterator));
         }
         return productGroups;
+    }
+
+    public static ProductGroup createProductGroupFromNextRow(Iterator<Row> sqlIterator) {
+        final Row row = sqlIterator.next();
+        final int id = row.getInt(0);
+        final String name = row.getString(1);
+        return ProductGroup.createGroup(name, id);
     }
 
 }
