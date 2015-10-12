@@ -4,6 +4,8 @@ import miccab.nonblocking.dao.ProductDaoAsyncObservable;
 import miccab.nonblocking.model.Product;
 import miccab.nonblocking.model.ProductGroup;
 import miccab.nonblocking.model.ProductWithGroups;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Scheduler;
 import rx.schedulers.Schedulers;
@@ -26,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 @Path("/productHttpDbAsyncWithSequentialObservable")
 @Produces(MediaType.APPLICATION_JSON)
 public class ProductHttpDbAsyncWithSequentialObservableResource {
+    private static final Logger LOG = LoggerFactory.getLogger(ProductHttpDbAsyncWithSequentialObservableResource.class);
     private final ProductDaoAsyncObservable productDao;
     private final Scheduler schedulerToCompleteCalls;
 
@@ -42,11 +45,11 @@ public class ProductHttpDbAsyncWithSequentialObservableResource {
             if (asyncResponse.isDone()) {
                 return Observable.error(new IllegalStateException("Response already done"));
             } else {
-                final Observable<ProductGroup> productGroupsIndividual = productDao.findProductGroupsById(id).subscribeOn(schedulerToCompleteCalls);
+                final Observable<ProductGroup> productGroupsIndividual = productDao.findProductGroupsById(id);
                 final Observable<List<ProductGroup>> productGroups = productGroupsIndividual.collect(ArrayList::new, List::add);
                 return productGroups.map(productGroupsFound -> ProductWithGroups.createProductWithGroups(productFound, productGroupsFound));
             }
         });
-        finalResult.subscribe(asyncResponse::resume, asyncResponse::resume);
+        finalResult.observeOn(schedulerToCompleteCalls).subscribe(asyncResponse::resume, asyncResponse::resume);
     }
 }
