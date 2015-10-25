@@ -16,7 +16,7 @@ database:
     charSet: UTF-8
 
   # the maximum amount of time to wait on an empty pool before throwing an exception
-  maxWaitForConnection: 5s
+  maxWaitForConnection: 30s
 
   # the SQL query to run when validating a connection's liveness
   validationQuery: "/* MyService Health Check */ SELECT 1"
@@ -68,8 +68,6 @@ server:
   minThreads: 7
   maxThreads: 7
   adminConnectors: []
-#  adminMinThreads: 2
-#  adminMaxThreads: 2
   requestLog:
      appenders: []
 

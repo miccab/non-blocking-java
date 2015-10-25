@@ -12,6 +12,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -23,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 public class ProductHttpAsyncResource {
     private static final Logger LOG = LoggerFactory.getLogger(ProductHttpAsyncResource.class);
     private final ProductDao productDao;
-    private final ExecutorService executorService;
+    private final Executor executorService;
 
     public ProductHttpAsyncResource(ProductDao productDao, ExecutorService executorService) {
         this.productDao = productDao;
@@ -34,7 +35,7 @@ public class ProductHttpAsyncResource {
     public void findById(@QueryParam("id") int id, @Suspended AsyncResponse asyncResponse) {
         LOG.trace("Finding product by id:{}", id);
         asyncResponse.setTimeout(10, TimeUnit.SECONDS);
-        executorService.submit(new AsyncFindById(id, asyncResponse));
+        executorService.execute(new AsyncFindById(id, asyncResponse));
     }
 
     class AsyncFindById implements Runnable {
@@ -48,12 +49,20 @@ public class ProductHttpAsyncResource {
 
         public void run() {
             if (! asyncResponse.isDone()) {
-                LOG.trace("Calling DAO for product by id:{}", id);
-                final Product product = new Product();
-                product.setId(id);
-                product.setName(productDao.findNameById(id));
-                asyncResponse.resume(product);
+                try {
+                    asyncResponse.resume(doRun());
+                } catch (RuntimeException e) {
+                    asyncResponse.resume(e);
+                }
             }
+        }
+
+        public Product doRun() {
+            LOG.trace("Calling DAO for product by id:{}", id);
+            final Product product = new Product();
+            product.setId(id);
+            product.setName(productDao.findNameById(id));
+            return product;
         }
     }
 }
