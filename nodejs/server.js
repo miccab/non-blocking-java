@@ -2,7 +2,7 @@ var express    = require('express');
 var app        = express();
 var bodyParser = require('body-parser');
 var pg = require('pg');
-pg.defaults.poolSize = 32;
+pg.defaults.poolSize = 500;
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
