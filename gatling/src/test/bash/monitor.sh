@@ -28,7 +28,8 @@ function start_monitoring_java()
     suffix=`date +%Y%m%d%H%M%S`
     start_monitoring $name $suffix
 
-    java_server_pid=`ps -ef | grep java | grep jar | grep non-blocking | awk '{print $2}'`
+    java_server_pid=`ps -ef | grep java | grep jar | grep non-blocking-1.0-SNAPSHOT | awk '{print $2}'`
+    echo "Java pid: $java_server_pid"
     echo "Monitoring process mem utilization ..."
     top -d 2 -bp $java_server_pid > monitor_procmemutil_${name}_${suffix} 2>&1 &
     last_pid=$!

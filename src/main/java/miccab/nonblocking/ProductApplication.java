@@ -44,6 +44,7 @@ public class ProductApplication extends Application<ProductConfiguration> {
         final ProductDao productDao = jdbi.onDemand(ProductDao.class);
         final Db pgAsyncDb = createPgAsyncDb(configuration);
 
+        environment.jersey().register(new MonitoringResource());
         environment.jersey().register(new ProductResource(productDao));
         environment.jersey().register(new ProductHttpAsyncResource(productDao,
                                                                    Executors.newFixedThreadPool(configuration.getDataSourceFactory().getMaxSize(),
