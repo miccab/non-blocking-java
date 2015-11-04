@@ -65,7 +65,7 @@ class BasicSimulation extends Simulation {
     }
   }
 
-  setUp(myScenarios :_*).protocols(httpConf)
+  setUp(myScenarios).protocols(httpConf)
 
   def determineResource(simulationType: String) = simulationType match {
     case "sync" => "/product"

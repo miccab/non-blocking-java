@@ -21,6 +21,11 @@ function start_monitoring()
     sar -w 2 > monitor_cpuswitch_${name}_${suffix} 2>&1 &
     last_pid=$!
     echo $last_pid >> pids
+ 
+    echo "Monitoring number of db connections ..."
+    monitor_dbconn > monitor_dbconn_${name}_${suffix} 2>&1 &
+    last_pid=$!
+    echo $last_pid >> pids
 }
 function start_monitoring_java()
 {
@@ -66,6 +71,15 @@ function monitor_threads() {
         sleep 2
     done
 }
+
+function monitor_dbconn() {
+    while true; do
+        date
+        netstat -an | grep :5432 | netstat -an | grep :5432 | grep -c ESTABLISHED
+        sleep 2
+    done
+}
+
 
 function stop_monitoring() {
     if [ -f pids ]; then
