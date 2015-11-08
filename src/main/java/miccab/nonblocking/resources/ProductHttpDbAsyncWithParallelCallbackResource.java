@@ -14,7 +14,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by michal on 02.08.15.
@@ -34,31 +34,34 @@ public class ProductHttpDbAsyncWithParallelCallbackResource {
         // NOTICE: DAO now uses single threaded model. So we should not need any sync
         //         however, this is implementation detail which might change.
         //         so to be safe we use synchronization to protect from race conditions
-        final AtomicReference<List<ProductGroup>> productGroups = new AtomicReference<>();
-        final AtomicReference<Product> product = new AtomicReference<>();
+        final AtomicInteger pendingData = new AtomicInteger(2);
+        final ProductData productData = new ProductData();
         productDao.findNameById(id,
-                productFound -> consumeProduct(asyncResponse, productFound, product, productGroups),
+                productFound -> consumeProduct(asyncResponse, productFound, productData, pendingData),
                 asyncResponse::resume);
         productDao.findProductGroupsById(id,
-                productGroupsFound -> consumeProductGroups(asyncResponse, productGroupsFound, product, productGroups),
+                productGroupsFound -> consumeProductGroups(asyncResponse, productGroupsFound, productData, pendingData),
                 asyncResponse::resume);
     }
 
-    private void consumeProduct(AsyncResponse asyncResponse, Product productFound, AtomicReference<Product> product, AtomicReference<List<ProductGroup>> productGroups) {
-        product.set(productFound);
+    private void consumeProduct(AsyncResponse asyncResponse, Product productFound, ProductData productData, AtomicInteger pendingData) {
+        productData.product = productFound;
         // this is needed if we do not want to assume that DAO is single threaded
-        final List<ProductGroup> productGroupsFound = productGroups.getAndSet(null);
-        if (productGroupsFound != null) {
-            asyncResponse.resume(ProductWithGroups.createProductWithGroups(productFound, productGroupsFound));
+        if (pendingData.decrementAndGet() == 0) {
+            asyncResponse.resume(ProductWithGroups.createProductWithGroups(productFound, productData.productGroups));
         }
     }
 
-    private void consumeProductGroups(AsyncResponse asyncResponse, List<ProductGroup> productGroupsFound, AtomicReference<Product> product, AtomicReference<List<ProductGroup>> productGroups) {
-        productGroups.set(productGroupsFound);
+    private void consumeProductGroups(AsyncResponse asyncResponse, List<ProductGroup> productGroupsFound, ProductData productData, AtomicInteger pendingData) {
+        productData.productGroups = productGroupsFound;
         // this is needed if we do not want to assume that DAO is single threaded
-        final Product productFound = product.getAndSet(null);
-        if (productFound != null) {
-            asyncResponse.resume(ProductWithGroups.createProductWithGroups(productFound, productGroupsFound));
+        if (pendingData.decrementAndGet() == 0) {
+            asyncResponse.resume(ProductWithGroups.createProductWithGroups(productData.product, productGroupsFound));
         }
     }
+}
+
+class ProductData {
+    volatile Product product;
+    volatile List<ProductGroup> productGroups;
 }
