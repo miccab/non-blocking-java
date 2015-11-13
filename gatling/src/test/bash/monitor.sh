@@ -11,6 +11,7 @@ function start_monitoring()
     fi
     name=$1
     suffix=$2
+    mypid=$3
 
     echo "Monitoring cpu utilization ..."
     sar -u 2 > monitor_cpuutil_${name}_${suffix} 2>&1 &
@@ -26,15 +27,20 @@ function start_monitoring()
     monitor_dbconn > monitor_dbconn_${name}_${suffix} 2>&1 &
     last_pid=$!
     echo $last_pid >> pids
+
+    echo "Monitoring process stats..."
+    perf stat -p $mypid > monitor_process_perf_${name}_${suffix} 2>&1 &
+    last_pid=$!
+    echo $last_pid >> pids
 }
 function start_monitoring_java()
 {
     name=$1
     suffix=`date +%Y%m%d%H%M%S`
-    start_monitoring $name $suffix
-
     java_server_pid=`ps -ef | grep java | grep jar | grep non-blocking-1.0-SNAPSHOT | awk '{print $2}'`
     echo "Java pid: $java_server_pid"
+    start_monitoring $name $suffix $java_server_pid
+
     echo "Monitoring process mem utilization ..."
     top -d 2 -bp $java_server_pid > monitor_procmemutil_${name}_${suffix} 2>&1 &
     last_pid=$!
@@ -54,9 +60,10 @@ function start_monitoring_nodejs()
 {
     name=$1
     suffix=`date +%Y%m%d%H%M%S`
-    start_monitoring $name $suffix
 
     java_server_pid=`ps -ef | grep 'node server.js' | grep -v grep | awk '{print $2}'`
+    start_monitoring $name $suffix $java_server_pid
+
     echo "Monitoring process mem utilization ..."
     top -d 2 -bp $java_server_pid > monitor_procmemutil_${name}_${suffix} 2>&1 &
     last_pid=$!
@@ -85,7 +92,9 @@ function stop_monitoring() {
     if [ -f pids ]; then
         while read pid; do
             echo "Killing $pid ..."
-            kill -9 $pid
+            kill -SIGINT $pid
+            sleep 1
+            kill -9 $pid > /dev/null 2>&1
         done < pids
         rm -rf pids
     else

@@ -1,5 +1,6 @@
 package non_blocking
 
+import scala.concurrent.duration._
 import io.gatling.core.scenario.Simulation
 import io.gatling.core.Predef._
 import io.gatling.core.structure.PopulatedScenarioBuilder
@@ -76,7 +77,8 @@ class BasicSimulation extends Simulation {
 
   def callMonitoringOperation(operation : String ) {
     val monitoringName = s"${simulationType}_${numOfUsers}_fast_${numOfUsersSlow}_slow_$scenarioName"
-    val response = Http(s"http://$targetHostPort/monitoring").postForm(Seq("operation" -> operation, "name" -> monitoringName)).asString
+    val timeoutMillis = (10, SECONDS).toMillis
+    val response = Http(s"http://$targetHostPort/monitoring").timeout(timeoutMillis.toInt, timeoutMillis.toInt).postForm(Seq("operation" -> operation, "name" -> monitoringName)).asString
     if (response.isError) {
       println(response)
       throw new IllegalStateException("Monitoring operation failed")
