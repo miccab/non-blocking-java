@@ -72,6 +72,8 @@ class BasicSimulation extends Simulation {
     case "sync" => "/product"
     case "async_http" => "/productHttpAsync"
     case "async_http_db" => "/productHttpDbAsync"
+    case "sync_withdesc" => "/productWithDescription"
+    case "async_http_db_withdesc" => "/productWithDescriptionHttpDbAsync"
     case "nodejs" => "/productNodeJs"
   }
 

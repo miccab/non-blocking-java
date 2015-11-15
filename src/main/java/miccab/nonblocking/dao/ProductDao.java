@@ -16,4 +16,8 @@ public interface ProductDao {
     String SQL_FIND_PRODUCT_GROUPS_BY_PRODUCT_ID = "select id, name from product_to_group ptg join product_group pg on pg.id = ptg.product_group_id where product_id = :id";
     @SqlQuery(SQL_FIND_PRODUCT_GROUPS_BY_PRODUCT_ID)
     List<String> findProductGroupsById(@Bind("id") int id);
+
+    String SQL_FIND_PRODUCT_DESCRIPTION = "select find_product_description(:id)";
+    @SqlQuery(SQL_FIND_PRODUCT_DESCRIPTION)
+    String findProductDescription(@Bind("id") int id);
 }

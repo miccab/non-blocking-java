@@ -46,10 +46,12 @@ public class ProductApplication extends Application<ProductConfiguration> {
 
         environment.jersey().register(new MonitoringResource());
         environment.jersey().register(new ProductResource(productDao));
+        environment.jersey().register(new ProductWithDescriptionResource(productDao));
         environment.jersey().register(new ProductHttpAsyncResource(productDao,
                                                                    Executors.newFixedThreadPool(configuration.getDataSourceFactory().getMaxSize(),
                                                                                                 new ThreadFactoryBuilder().setDaemon(true).setNameFormat("MyDbExecutionThread_%d").build())));
         environment.jersey().register(new ProductHttpDbAsyncResource(pgAsyncDb));
+        environment.jersey().register(new ProductWithDescriptionHttpDbAsyncResource(pgAsyncDb));
         final Executor executorToCompleteCalls = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setDaemon(true).setNameFormat("MyCompletionThread_%d").build());
         final ProductDaoAsyncCallback productDaoAsyncCallback = new ProductDaoAsyncCallback(pgAsyncDb);
         final ProductDaoAsyncFuture productDaoAsyncFuture = new ProductDaoAsyncFuture(pgAsyncDb);

@@ -5,6 +5,12 @@ CREATE TABLE product
   CONSTRAINT "PK_PRODUCT" PRIMARY KEY (id)
 );
 
+CREATE TABLE product_description
+(
+  id integer NOT NULL,
+  description text NOT NULL,
+  CONSTRAINT "PK_PRODUCT_DESCRIPTION" PRIMARY KEY (id)
+);
 
 CREATE TABLE product_group
 (
@@ -45,6 +51,25 @@ $BODY$
 ALTER FUNCTION find_product_name(integer)
   OWNER TO dropwizard;
 
+CREATE OR REPLACE FUNCTION find_product_description(integer)
+  RETURNS character varying AS
+$BODY$
+DECLARE
+    product_id ALIAS FOR $1;
+    product_rec product_description%ROWTYPE;
+BEGIN
+ if product_id & 1 = 1 then
+	PERFORM pg_sleep(1);
+ end if;
+ select into product_rec * from product_description where id  = product_id;
+ IF NOT FOUND THEN
+	RAISE EXCEPTION 'product % not found', product_id;
+ else
+	return product_rec.description;
+ END IF;
+END;
+$BODY$
+  LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION gen_data() RETURNS VOID
