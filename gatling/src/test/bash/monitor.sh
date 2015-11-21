@@ -2,6 +2,7 @@
 
 operation=$1
 name=$2
+explicit_pid=$3
 
 function start_monitoring()
 {
@@ -37,7 +38,12 @@ function start_monitoring_java()
 {
     name=$1
     suffix=`date +%Y%m%d%H%M%S`
-    java_server_pid=`ps -ef | grep java | grep jar | grep non-blocking-1.0-SNAPSHOT | awk '{print $2}'`
+    java_server_pid="$2"
+    if [ -z "java_server_pid" ]; then
+        java_server_pid=`ps -ef | grep java | grep jar | grep non-blocking-1.0-SNAPSHOT | awk '{print $2}'`
+    else
+        name="${name}_${java_server_pid}"
+    fi
     echo "Java pid: $java_server_pid"
     start_monitoring $name $suffix $java_server_pid
 
@@ -60,8 +66,12 @@ function start_monitoring_nodejs()
 {
     name=$1
     suffix=`date +%Y%m%d%H%M%S`
-
-    java_server_pid=`ps -ef | grep 'node server.js' | grep -v grep | awk '{print $2}'`
+    java_server_pid="$2"
+    if [ -z "java_server_pid" ]; then
+        java_server_pid=`ps -ef | grep 'node server.js' | grep -v grep | awk '{print $2}'`
+    else
+        name="${name}_${java_server_pid}"
+    fi
     start_monitoring $name $suffix $java_server_pid
 
     echo "Monitoring process mem utilization ..."
@@ -104,16 +114,16 @@ function stop_monitoring() {
 
 case $operation in
     start_java)
-        start_monitoring_java $name
+        start_monitoring_java $name $explicit_pid
         ;;
     start_nodejs)
-        start_monitoring_nodejs $name
+        start_monitoring_nodejs $name $explicit_pid
         ;;
     stop)
         stop_monitoring
         ;;
     *)
-        echo "usage $0 start_java|start_nodejs|stop [name]"
+        echo "usage $0 start_java|start_nodejs|stop [name] [pid]"
         exit 1
 esac
 

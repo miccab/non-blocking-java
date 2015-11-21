@@ -7,6 +7,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.lang.management.ManagementFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -35,7 +36,8 @@ public class MonitoringResource {
     }
 
     private void doExecuteMonitoring(String operation, String name) {
-        final ProcessBuilder processBuilder = new ProcessBuilder(MONITORING_SCRIPT, operation, String.valueOf(name));
+        final String pid = getPidForCurrentProcess();
+        final ProcessBuilder processBuilder = new ProcessBuilder(MONITORING_SCRIPT, operation, String.valueOf(name), pid);
         try {
             final Process process = processBuilder.start();
             process.waitFor(10, TimeUnit.SECONDS);
@@ -49,6 +51,10 @@ public class MonitoringResource {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private String getPidForCurrentProcess() {
+        return ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
     }
 
 }
