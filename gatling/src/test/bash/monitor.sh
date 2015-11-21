@@ -6,39 +6,41 @@ explicit_pid=$3
 
 function start_monitoring()
 {
-    if [ -f pids ]; then
-        echo "Pids file already exists. Cannot start monitoring."
-        exit 1
-    fi
     name=$1
     suffix=$2
     mypid=$3
+    pidfile="pids${mypid}"
+    if [ -f $pidfile ]; then
+        echo "Pids file already exists. Cannot start monitoring."
+        exit 1
+    fi
 
     echo "Monitoring cpu utilization ..."
     sar -u 2 > monitor_cpuutil_${name}_${suffix} 2>&1 &
     last_pid=$!
-    echo $last_pid > pids
+    echo $last_pid > $pidfile
 
     echo "Monitoring cpu switches ..."
     sar -w 2 > monitor_cpuswitch_${name}_${suffix} 2>&1 &
     last_pid=$!
-    echo $last_pid >> pids
+    echo $last_pid >> $pidfile
  
     echo "Monitoring number of db connections ..."
     monitor_dbconn > monitor_dbconn_${name}_${suffix} 2>&1 &
     last_pid=$!
-    echo $last_pid >> pids
+    echo $last_pid >> $pidfile
 
     echo "Monitoring process stats..."
     perf stat -p $mypid > monitor_process_perf_${name}_${suffix} 2>&1 &
     last_pid=$!
-    echo $last_pid >> pids
+    echo $last_pid >> $pidfile
 }
 function start_monitoring_java()
 {
     name=$1
     suffix=`date +%Y%m%d%H%M%S`
     java_server_pid="$2"
+    pidfile="pids${java_server_pid}"
     if [ -z "$java_server_pid" ]; then
         java_server_pid=`ps -ef | grep java | grep jar | grep non-blocking-1.0-SNAPSHOT | awk '{print $2}'`
     else
@@ -50,23 +52,24 @@ function start_monitoring_java()
     echo "Monitoring process mem utilization ..."
     top -d 2 -bp $java_server_pid > monitor_procmemutil_${name}_${suffix} 2>&1 &
     last_pid=$!
-    echo $last_pid >> pids
+    echo $last_pid >> $pidfile
 
     echo "Monitoring jvm mem utilization ..."
     jstat -gc $java_server_pid 2s > monitor_jvmmemutil_${name}_${suffix} 2>&1 &
     last_pid=$!
-    echo $last_pid >> pids
+    echo $last_pid >> $pidfile
 
     echo "Monitoring number of threads ..."
     monitor_threads $java_server_pid > monitor_threadnum_${name}_${suffix} 2>&1 &
     last_pid=$!
-    echo $last_pid >> pids
+    echo $last_pid >> $pidfile
 }
 function start_monitoring_nodejs()
 {
     name=$1
     suffix=`date +%Y%m%d%H%M%S`
     java_server_pid="$2"
+    pidfile="pids${java_server_pid}"
     if [ -z "$java_server_pid" ]; then
         java_server_pid=`ps -ef | grep 'node server.js' | grep -v grep | awk '{print $2}'`
     else
@@ -77,7 +80,7 @@ function start_monitoring_nodejs()
     echo "Monitoring process mem utilization ..."
     top -d 2 -bp $java_server_pid > monitor_procmemutil_${name}_${suffix} 2>&1 &
     last_pid=$!
-    echo $last_pid >> pids
+    echo $last_pid >> $pidfile
 }
 
 function monitor_threads() {
@@ -99,14 +102,15 @@ function monitor_dbconn() {
 
 
 function stop_monitoring() {
-    if [ -f pids ]; then
+    explicit_pid="$1"
+    if [ -f "pids${explicit_pid}" ]; then
         while read pid; do
             echo "Killing $pid ..."
             kill -SIGINT $pid
             sleep 1
             kill -9 $pid > /dev/null 2>&1
-        done < pids
-        rm -rf pids
+        done < "pids${explicit_pid}"
+        rm -rf "pids${explicit_pid}"
     else
         echo "File with pids is missing. Nothing to stop."
     fi
@@ -120,7 +124,7 @@ case $operation in
         start_monitoring_nodejs $name $explicit_pid
         ;;
     stop)
-        stop_monitoring
+        stop_monitoring $explicit_pid
         ;;
     *)
         echo "usage $0 start_java|start_nodejs|stop [name] [pid]"
