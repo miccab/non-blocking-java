@@ -39,7 +39,7 @@ function start_monitoring_java()
     name=$1
     suffix=`date +%Y%m%d%H%M%S`
     java_server_pid="$2"
-    if [ -z "java_server_pid" ]; then
+    if [ -z "$java_server_pid" ]; then
         java_server_pid=`ps -ef | grep java | grep jar | grep non-blocking-1.0-SNAPSHOT | awk '{print $2}'`
     else
         name="${name}_${java_server_pid}"
@@ -67,7 +67,7 @@ function start_monitoring_nodejs()
     name=$1
     suffix=`date +%Y%m%d%H%M%S`
     java_server_pid="$2"
-    if [ -z "java_server_pid" ]; then
+    if [ -z "$java_server_pid" ]; then
         java_server_pid=`ps -ef | grep 'node server.js' | grep -v grep | awk '{print $2}'`
     else
         name="${name}_${java_server_pid}"
