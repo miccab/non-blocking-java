@@ -53,6 +53,9 @@
                 <groupId>io.gatling</groupId>
                 <artifactId>gatling-maven-plugin</artifactId>
                 <version>${gatling-plugin.version}</version>
+                <configuration>
+                    <outputDirectoryBaseName>${SIMULATION_TYPE}_${USERS}_fast_${USERS_SLOW}_slow_${SCENARIO_NAME}</outputDirectoryBaseName>
+                </configuration>
                 <executions>
                     <execution>
                         <phase>test</phase>
