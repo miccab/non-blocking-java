@@ -10,7 +10,7 @@ database:
 
   # the JDBC URL
   url: jdbc:postgresql://192.168.0.2/dropwizard
-
+  #url: jdbc:postgresql://localhost/dropwizard
   # any properties specific to your JDBC driver:
   properties:
     charSet: UTF-8
@@ -28,7 +28,8 @@ database:
   minSize: 8
 
   # the maximum number of connections to keep open
-  maxSize: 32
+  #maxSize: 32
+  maxSize: 500
 
   # whether or not idle connections should be validated
   checkConnectionWhileIdle: false
@@ -70,4 +71,7 @@ server:
   adminConnectors: []
   requestLog:
      appenders: []
+  applicationConnectors:
+  - type: http
+    port: 8080
 

@@ -4,6 +4,32 @@ operation=$1
 name=$2
 explicit_pid=$3
 
+function start_monitoring_os()
+{
+    name=$1
+    suffix=$2
+    mypid=$3
+    pidfile="pids${mypid}"
+
+    os_already_monitored=`ls | grep -c pids`
+    if [ $os_already_monitored -eq 0 ]; then
+        echo "Monitoring cpu utilization ..."
+        sar -u 2 > monitor_cpuutil_${name}_${suffix} 2>&1 &
+        last_pid=$!
+        echo $last_pid > $pidfile
+
+        echo "Monitoring cpu switches ..."
+        sar -w 2 > monitor_cpuswitch_${name}_${suffix} 2>&1 &
+        last_pid=$!
+        echo $last_pid >> $pidfile
+
+        echo "Monitoring number of db connections ..."
+        monitor_dbconn > monitor_dbconn_${name}_${suffix} 2>&1 &
+        last_pid=$!
+        echo $last_pid >> $pidfile
+    fi
+}
+
 function start_monitoring()
 {
     name=$1
@@ -14,21 +40,7 @@ function start_monitoring()
         echo "Pids file already exists. Cannot start monitoring."
         exit 1
     fi
-
-    echo "Monitoring cpu utilization ..."
-    sar -u 2 > monitor_cpuutil_${name}_${suffix} 2>&1 &
-    last_pid=$!
-    echo $last_pid > $pidfile
-
-    echo "Monitoring cpu switches ..."
-    sar -w 2 > monitor_cpuswitch_${name}_${suffix} 2>&1 &
-    last_pid=$!
-    echo $last_pid >> $pidfile
- 
-    echo "Monitoring number of db connections ..."
-    monitor_dbconn > monitor_dbconn_${name}_${suffix} 2>&1 &
-    last_pid=$!
-    echo $last_pid >> $pidfile
+    start_monitoring_os "$name" "$suffix" $mypid
 
     echo "Monitoring process stats..."
     perf stat -p $mypid > monitor_process_perf_${name}_${suffix} 2>&1 &
