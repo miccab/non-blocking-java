@@ -93,16 +93,11 @@ class BasicSimulation extends Simulation {
   }
 
   def getNumOfUsersFast(numberOfHosts : Int): Int = {
-    getNumOfUsersPerHost(Integer.getInteger("USERS", 48), numberOfHosts)
+    Integer.getInteger("USERS", 48)
   }
 
   def getNumOfUsersSlow(numberOfHosts : Int): Int = {
-    getNumOfUsersPerHost(Integer.getInteger("USERS_SLOW", 12), numberOfHosts)
-  }
-
-  def getNumOfUsersPerHost(totalNumberOfUsers : Int, numberOfHosts: Int): Int = {
-    val userPerHost = totalNumberOfUsers.toFloat / numberOfHosts
-    userPerHost.toInt
+    Integer.getInteger("USERS_SLOW", 12)
   }
 }
 
