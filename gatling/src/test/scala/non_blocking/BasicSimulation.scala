@@ -1,7 +1,5 @@
 package non_blocking
 
-import io.gatling.core.config.Protocol
-
 import scala.concurrent.duration._
 import io.gatling.core.scenario.Simulation
 import io.gatling.core.Predef._
@@ -44,37 +42,32 @@ class BasicSimulation extends Simulation {
   }
 
   var myScenarios : List[PopulatedScenarioBuilder] = Nil
-  var myProtocols : List[Protocol] = Nil
-  for (hostPort <- targetHostPorts) {
-    myProtocols ::= http
-      .baseURL(s"http://$hostPort")
+  val myProtocol = http.baseURLs(targetHostPorts.map("http://" + _))
+  val feederFast = csv("product_ids_fast.csv").circular
+  val feederSlow = csv("product_ids_slow.csv").circular
 
-    val feederFast = csv("product_ids_fast.csv").circular
-    val feederSlow = csv("product_ids_slow.csv").circular
-
-    val scnFast = scenario(s"Get Product details fast $hostPort").feed(feederFast)
-      .repeat(numOfRepeatsPerUser, "i") { exec(http("request_fast")
-        .get(httpResource)
-        .queryParam("id", "${product_id}"))
-        .pause(1)
-      }
-
-    val scnSlow = scenario(s"Get Product details slow $hostPort").feed(feederSlow)
-      .repeat(numOfRepeatsPerUser, "i") { exec(http("request_slow")
-        .get(httpResource)
-        .queryParam("id", "${product_id}"))
-        .pause(1)
-      }
-
-    if (numOfUsers > 0) {
-      myScenarios ::= scnFast.inject(rampUsers(numOfUsers) over rampUpTime)
-    }
-    if (numOfUsersSlow > 0) {
-      myScenarios ::= scnSlow.inject(rampUsers(numOfUsersSlow) over rampUpTime)
+  val scnFast = scenario(s"Get Product details fast").feed(feederFast)
+    .repeat(numOfRepeatsPerUser, "i") { exec(http("request_fast")
+      .get(httpResource)
+      .queryParam("id", "${product_id}"))
+      .pause(1)
     }
 
+  val scnSlow = scenario(s"Get Product details slow").feed(feederSlow)
+    .repeat(numOfRepeatsPerUser, "i") { exec(http("request_slow")
+      .get(httpResource)
+      .queryParam("id", "${product_id}"))
+      .pause(1)
+    }
+
+  if (numOfUsers > 0) {
+    myScenarios ::= scnFast.inject(rampUsers(numOfUsers) over rampUpTime)
   }
-  setUp(myScenarios).protocols(myProtocols)
+  if (numOfUsersSlow > 0) {
+    myScenarios ::= scnSlow.inject(rampUsers(numOfUsersSlow) over rampUpTime)
+  }
+
+  setUp(myScenarios).protocols(myProtocol)
 
   def determineResource(simulationType: String) = simulationType match {
     case "sync" => "/product"
@@ -95,8 +88,8 @@ class BasicSimulation extends Simulation {
     }
   }
 
-  def getTargetHostPorts: Array[String] = {
-    System.getProperty("HOST_PORT", "localhost:8080").split(",")
+  def getTargetHostPorts: List[String] = {
+    System.getProperty("HOST_PORT", "localhost:8080").split(",").toList
   }
 
   def getNumOfUsersFast(numberOfHosts : Int): Int = {
